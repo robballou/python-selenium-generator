@@ -77,7 +77,7 @@ class TestGenerator(object):
     
 
 def is_url(str):
-    if re.match(r'http://(.+)', str):
+    if re.match(r'https?://(.+)', str):
         return True
     return False
 
