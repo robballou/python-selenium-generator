@@ -12,6 +12,8 @@
 #    Input: Entire Document
 #    Output: Create New Document
 #
+# You also need to set $SELENIUM_GENERATOR in your TM preferences (Advanced -> Shell Variables)
+# 
 # Version: 0.1
 #
 

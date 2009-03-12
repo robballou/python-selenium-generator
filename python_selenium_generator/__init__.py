@@ -22,7 +22,7 @@ Dependecies:
 
 """
 __author__ = 'Rob Ballou (rob.ballou@gmail.com)'
-__version__ = '0.1a'
+__version__ = '0.1'
 __license__ = 'MIT'
 
 import optparse
@@ -36,17 +36,33 @@ class TestGenerator(object):
     
     Currently generates PHP-friendly test code, but can be extended to change either
     the code that is generated for other languages or to change the behavior of some of
-    form fulliment code
+    form fulliment code.
     
     """
     def __init__(self, form, tester='$this->selenium->'):
         self.form = form
         self.tester = tester
     
+    def build_command(self, action, target, value=None):
+        # update the value field if necessary
+        if value:
+            value = ", '%s'" % value.replace("'", "\'")
+        return "%s%s('%s'%s)%s" % (self.get_tester(), action, target, value, self.end_command())
+    
     def check_input(self, element):
-        return "%scheck('%s');" % (self.get_tester(), element.attrs['id'])
+        """
+        Check this checkbox on the form.
+        
+        By default, this will check all checkboxes in the form.
+        
+        """
+        return self.build_command('check', element.attrs['id'])
 
     def create(self):
+        """
+        Create the test code
+        
+        """
         test = ""
         for e in self.form.elements:
             this_test = ""
@@ -63,25 +79,79 @@ class TestGenerator(object):
                 test = "%s%s\n" % (test, this_test)
         return test.strip()
     
+    def end_command(self):
+        """
+        Used to append a common string to the end of commands used in the 
+        fulliment methods
+        
+        """
+        return ";"
+    
     def fill_email(self, element):
+        """
+        Places an example email value in the form
+        
+        This method is trigged when 'email' is present in the text input element's name attribute.
+        
+        """
         return self.fill_text(element, value='example@example.org')
 
     def fill_text(self, element, value='Lorem'):
-        return "%stype('%s', '%s');" % (self.get_tester(), element.attrs['id'], value.replace("'", "\'"))
+        """
+        Insert a value into the text field
+        
+        """
+        return self.build_command('type', element.attrs['id'], value)
     
     def get_tester(self):
+        """
+        Provide the value for the 'tester' or the selenium object in the code to be generated.
+        
+        """
         return self.tester
     
     def select_option(self, element):
-        return "%sselect('%s', 'value=regexp:.+');" % (self.get_tester(), element.attrs['id'])
+        return self.build_command('select', element.attrs['id'], 'value=regexp:.+')
     
+class HTMLGenerator(TestGenerator):
+    def build_command(self, action, target, value=None):
+        if not value:
+            value = ''
+        return "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % (action, target, value)
+    
+    def create(self, url=""):
+        if url:
+            url = """<link rel="selenium.base" href="%s" />""" % url
+        test = super(HTMLGenerator, self).create()
+        html = """<?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+        <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+        <head profile="http://selenium-ide.openqa.org/profiles/test-case">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>simple</title>
+        %s
+        </head>
+        <body>
+        <table cellpadding="1" cellspacing="1" border="1">
+        <thead>
+        <tr><td rowspan="1" colspan="3">simple</td></tr>
+        </thead><tbody>
+        %s</tbody></table>
+        </body>
+        </html>""" % (url, test)
+        return '\n'.join([line.strip() for line in html.splitlines()])
 
 def is_url(str):
+    """
+    Determines if the string is an HTTP URL.
+    
+    """
     if re.match(r'https?://(.+)', str):
         return True
     return False
 
 if __name__ == '__main__':
+    # provide some basic functionality to the module
     parser = optparse.OptionParser()
     parser.add_option('-j', '--json', action='store_true', dest='json', default=False)
     (options, args) = parser.parse_args()
