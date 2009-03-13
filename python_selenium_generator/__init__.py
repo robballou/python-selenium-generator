@@ -111,6 +111,11 @@ class TestGenerator(object):
         return self.tester
     
     def select_option(self, element):
+        """
+        Choose an option in a select box
+        
+        By default this will select the first option that has a value that is not empty
+        """
         return self.build_command('select', element.attrs['id'], 'value=regexp:.+')
     
 class HTMLGenerator(TestGenerator):
