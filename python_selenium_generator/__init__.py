@@ -47,6 +47,9 @@ class TestGenerator(object):
         # update the value field if necessary
         if value:
             value = ", '%s'" % value.replace("'", "\'")
+        else:
+            # if there is no value, we don't want to insert that into the command
+            value = ""
         return "%s%s('%s'%s)%s" % (self.get_tester(), action, target, value, self.end_command())
     
     def check_input(self, element):
